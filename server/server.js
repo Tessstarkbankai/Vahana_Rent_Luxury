@@ -13,7 +13,9 @@ const app = express()
 await connectDB()
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin:["http://localhost:5173/","https://vahana-rent-luxury-5u59.vercel.app/"]
+}));
 app.use(express.json());
 
 app.get('/', (req, res)=> res.send("Server is running"))
