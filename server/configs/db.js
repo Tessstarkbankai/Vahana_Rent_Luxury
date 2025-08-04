@@ -1,52 +1,41 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
+// Global variable to cache the connection
+global.mongoose = global.mongoose || { conn: null, promise: null };
 
-const connectDB = async ()=>{
-    // If already connected, reuse the connection
-    if (isConnected) {
+const connectDB = async () => {
+    if (global.mongoose.conn) {
         console.log("Using existing database connection");
-        return;
+        return global.mongoose.conn;
     }
 
-    // If connecting, wait for it
-    if (mongoose.connection.readyState === 1) {
-        isConnected = true;
-        return;
-    }
-
-    try {
-        mongoose.connection.on('connected', ()=> {
-            console.log("Database Connected");
-            isConnected = true;
-        });
-        
-        mongoose.connection.on('disconnected', ()=> {
-            console.log("Database Disconnected");
-            isConnected = false;
-        });
-
-        mongoose.connection.on('error', (error) => {
-            console.log("Database connection error:", error);
-            isConnected = false;
-        });
-
+    if (!global.mongoose.promise) {
         const options = {
             bufferCommands: false,
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            family: 4
+            family: 4,
+            // Additional serverless optimizations
+            maxIdleTimeMS: 30000,
+            waitQueueTimeoutMS: 5000,
         };
 
-        await mongoose.connect(`${process.env.MONGODB_URI}/car-rental`, options);
-        isConnected = true;
-        
+        console.log("Creating new database connection...");
+        global.mongoose.promise = mongoose.connect(process.env.MONGODB_URI, options).then((mongoose) => {
+            console.log("Database Connected");
+            return mongoose;
+        });
+    }
+
+    try {
+        global.mongoose.conn = await global.mongoose.promise;
+        return global.mongoose.conn;
     } catch (error) {
-        console.log("Database connection error:", error.message);
-        isConnected = false;
+        global.mongoose.promise = null;
+        console.error("Database connection error:", error);
         throw error;
     }
-}
+};
 
 export default connectDB;

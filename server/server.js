@@ -9,9 +9,6 @@ import bookingRouter from "./routes/bookingRoutes.js";
 // Initialize Express App
 const app = express()
 
-// Connect Database only once
-connectDB().catch(console.error);
-
 // Middleware
 app.use(cors({
     origin: ["http://localhost:5173", "https://vahana-rent-luxury-5u59.vercel.app"]
