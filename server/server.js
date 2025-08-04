@@ -9,12 +9,25 @@ import bookingRouter from "./routes/bookingRoutes.js";
 // Initialize Express App
 const app = express()
 
-// Connect Database
-await connectDB()
+// Connect Database only once
+connectDB().catch(console.error);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:5173", "https://vahana-rent-luxury-5u59.vercel.app"]
+}));
 app.use(express.json());
+
+// Middleware to ensure database connection
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+});
 
 app.get('/', (req, res)=> res.send("Server is running"))
 app.use('/api/user', userRouter)
